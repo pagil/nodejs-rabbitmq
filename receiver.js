@@ -1,15 +1,21 @@
-var amqp = require('amqplib/callback_api')
+var amqp = require('amqplib');
 
-amqp.connect('amqp:localhost', function(err, conn) {
-  conn.createChannel(function(err, ch) {
-    var q = 'hello';
+amqp.connect('amqp:localhost').
+  then(conn => {
+      return conn.createChannel();
+  }).
+  then(ch => {
+      var q = 'hello';
 
-    ch.assertQueue(q, {durable: true});
+      ch.assertQueue(q, {durable: true});
 
-    console.log(" [*] Waiting for message in %s. To exit press CTRL + C", q)
+      console.log(" [*] Waiting for message in %s. To exit press CTRL + C", q);
 
-    ch.consume(q, function(msg){
-      console.log(" [x] Received %s", msg.content.toString());
-    }, {noAck: true});
+      return ch.consume(q, function(msg) {
+        var jsonObj = JSON.parse(msg.content.toString());
+        console.log("SellerNetworkId: %s", jsonObj.SellerNetworkId);
+      }, {noAck: true});
+  }).
+  catch(err => {
+      console.log('Error happened: ', err);
   });
-});
